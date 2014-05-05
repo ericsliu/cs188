@@ -15,6 +15,7 @@
 
 # Perceptron implementation
 import util
+from collections import Counter
 PRINT = True
 
 class PerceptronClassifier:
@@ -55,8 +56,11 @@ class PerceptronClassifier:
         for iteration in range(self.max_iterations):
             print "Starting iteration ", iteration, "..."
             for i in range(len(trainingData)):
-                "*** YOUR CODE HERE ***"
-                util.raiseNotDefined()
+                label = self.classify([trainingData[i]])[0]
+                if label != trainingLabels[i]:
+                    feature = trainingData[i].copy()
+                    self.weights[label] -= feature
+                    self.weights[trainingLabels[i]] += feature
 
     def classify(self, data ):
         """
@@ -73,14 +77,14 @@ class PerceptronClassifier:
             guesses.append(vectors.argMax())
         return guesses
 
-
     def findHighWeightFeatures(self, label):
         """
         Returns a list of the 100 features with the greatest weight for some label
         """
         featuresWeights = []
-
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        sortedWeights = self.weights[label].sortedKeys()
+        count = 0
+        while count < 100:
+            featuresWeights.append(sortedWeights[count])
+            count += 1
         return featuresWeights
