@@ -64,33 +64,32 @@ class MiraClassifier:
         bestWeights = {}
         for label in self.legalLabels:
             bestWeights[label] = util.Counter()
-        minErrors = float("inf")
-        print 'Cgrid = ', Cgrid
         for c in Cgrid:
             testErrors = 0.0
             for label in self.legalLabels:
                 self.weights[label] = util.Counter()
-            for i in range(len(trainingData)):
-                label = self.classify([trainingData[i]])[0]
-                if label != trainingLabels[i]:
-                    feature = trainingData[i].copy()
-                    temp = util.Counter()
-                    temp = self.weights[label] - self.weights[trainingLabels[i]]
-                    temp = temp * feature
-                    temp += 1.0
-                    temp = temp / (2 * abs(feature * feature))
-                    stepSize = min(c, temp)
-                    stepSize = 1 / stepSize
-                    feature.divideAll(stepSize)
-                    self.weights[trainingLabels[i]] += feature
-                    self.weights[label] -= feature
+            iteration = 0
+            while iteration < self.max_iterations:
+                for i in range(len(trainingData)):
+                    label = self.classify([trainingData[i]])[0]
+                    if label != trainingLabels[i]:
+                        feature = trainingData[i].copy()
+                        temp = util.Counter()
+                        temp = self.weights[label] - self.weights[trainingLabels[i]]
+                        temp = temp * feature
+                        temp += 1.0
+                        temp = temp / (2 * abs(feature * feature))
+                        stepSize = min(c, temp)
+                        stepSize = 1 / stepSize
+                        feature.divideAll(stepSize)
+                        self.weights[trainingLabels[i]] += feature
+                        self.weights[label] -= feature
+                iteration += 1
             for i in range(len(validationData)):
                 label = self.classify([trainingData[i]])[0]
                 if label != validationLabels[i]:
                     testErrors += 1.0
-            print 'testing for c = ', c
             if testErrors < minErrors:
-                print "changed weights for c =", c
                 minErrors = testErrors
                 bestWeights = self.weights
         self.weights = bestWeights
