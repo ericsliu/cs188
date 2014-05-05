@@ -73,14 +73,20 @@ def enhancedFeatureExtractorDigit(datum):
     for this datum (datum is of type samples.Datum).
 
     ## DESCRIBE YOUR ENHANCED FEATURES HERE...
-
+    Marks where changes from black to white occur in both x and y-direction
     ##
     """
     features =  basicFeatureExtractorDigit(datum)
-
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
+    for y in range(DIGIT_DATUM_HEIGHT):
+        for x in range(DIGIT_DATUM_WIDTH):
+            if x != 0 and datum.getPixel(x, y) != datum.getPixel(x - 1,y):
+                features[(x, y, 'edgex')] = 1
+            else:
+                features[(x, y, 'edgex')] = 0
+            if y != 0 and datum.getPixel(x, y) != datum.getPixel(x, y - 1):
+                features[(x, y, 'edgey')] = 1
+            else:
+                features[(x, y, 'edgey')] = 0
     return features
 
 
