@@ -77,16 +77,98 @@ def enhancedFeatureExtractorDigit(datum):
     ##
     """
     features =  basicFeatureExtractorDigit(datum)
+    enclosedStartY = False
+    enclosedEndY = False
+    enclosedStartX = False
+    enclosedEndX = False
     for y in range(DIGIT_DATUM_HEIGHT):
+        enclosedStart = False
+        enclosedEnd = False
+        spaceStart = 0
+        spaces = 0
+        maxSpaces = 0
         for x in range(DIGIT_DATUM_WIDTH):
-            if x != 0 and datum.getPixel(x, y) != datum.getPixel(x - 1,y):
-                features[(x, y, 'edgex')] = 1
+            if x != 0 and (datum.getPixel(x, y) > 0 and datum.getPixel(x - 1,y) == 0) or (datum.getPixel(x, y) == 0 and datum.getPixel(x - 1,y) > 0):
+                if datum.getPixel(x, y) == 0 and enclosedStart == False:
+                    enclosedStart = True
+                elif datum.getPixel(x, y) > 0 and enclosedStart == True:
+                    enclosedEnd = True
+                    if spaces > maxSpaces:
+                        maxSpaces = spaces
+                        spaceStart = x - maxSpaces
+            if datum.getPixel(x, y) == 0 and enclosedStart:
+                spaces += 1
             else:
-                features[(x, y, 'edgex')] = 0
-            if y != 0 and datum.getPixel(x, y) != datum.getPixel(x, y - 1):
-                features[(x, y, 'edgey')] = 1
+                spaces = 0
+        for x in range(DIGIT_DATUM_WIDTH):
+            if enclosedEnd == True:
+                if x >= spaceStart and x < spaceStart + maxSpaces:
+                    features[(x, y, 'spacesx')] = 1
+                    enclosedStartY = True
+                else:
+                    features[(x, y, 'spacesx')] = 0
             else:
-                features[(x, y, 'edgey')] = 0
+                features[(x, y, 'spacesx')] = 0
+        if y != 0 and enclosedStartY == True:
+            enclosed = True
+            for x in range(DIGIT_DATUM_WIDTH):
+                #check for enclosure
+                if features[(x, y - 1)] == 1:
+                    if features[(x, y, 'spacex')] == 0:
+                        continue
+                    else:
+                        enclosed = False
+                        break;
+            if enclosed:
+                enclosedEndY = True
+    if enclosedEndY == False:
+        for y in range(DIGIT_DATUM_HEIGHT):
+            for x in range(DIGIT_DATUM_WIDTH):
+                features[(x, y, 'spacesx')] = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+        enclosedStart = False
+        enclosedEnd = False
+        spaceStart = 0
+        spaces = 0
+        maxSpaces = 0
+        for y in range(DIGIT_DATUM_HEIGHT):
+            if y != 0 and (datum.getPixel(x, y) > 0 and datum.getPixel(x,y - 1) == 0) or (datum.getPixel(x, y) == 0 and datum.getPixel(x,y - 1) > 0):
+                if datum.getPixel(x, y) == 0 and enclosedStart == False:
+                    enclosedStart = True
+                elif datum.getPixel(x, y) > 0 and enclosedStart == True:
+                    enclosedEnd = True
+                    if spaces > maxSpaces:
+                        maxSpaces = spaces
+                        spaceStart = x - maxSpaces
+            if datum.getPixel(x, y) == 0 and enclosedStart:
+                spaces += 1
+            else:
+                spaces = 0
+        for y in range(DIGIT_DATUM_HEIGHT):
+            if enclosedEnd == True:
+                if y >= spaceStart and y < spaceStart + maxSpaces:
+                    features[(x, y, 'spacesy')] = 1
+                    enclosedStartY = True
+                else:
+                    features[(x, y, 'spacesy')] = 0
+            else:
+                features[(x, y, 'spacesy')] = 0
+        if x != 0 and enclosedStartX == True:
+            enclosed = True
+            for y in range(DIGIT_DATUM_HEIGHT):
+                #check for enclosure
+                if features[(x, y - 1)] == 1:
+                    if features[(x, y, 'spacey')] == 0:
+                        continue
+                    else:
+                        enclosed = False
+                        break;
+            if enclosed:
+                enclosedEndX = True
+    if enclosedEndX == False:
+        for x in range(DIGIT_DATUM_WIDTH):
+            for y in range(DIGIT_DATUM_HEIGHT):
+                features[(x, y, 'spaces')] = 0
     return features
 
 
@@ -130,8 +212,45 @@ def enhancedPacmanFeatures(state, action):
     It should return a counter with { <feature name> : <feature value>, ... }
     """
     features = util.Counter()
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    if True:
+        successor = state.generateSuccessor(0,action)
+        pos = successor.getPacmanPosition()
+        pos = successor.getPacmanPosition()
+        food = successor.getFood().asList()
+        power = successor.getCapsules()
+        ghostStates = successor.getGhostStates()
+        newScaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
+        features['win'] = 90 if successor.isWin() else 0
+        features['lose'] = 0 if successor.isLose() else 90
+        #features['food'] = successor.getFood().count()
+        count = 0
+        count3 = 0
+        for pellet in successor.getFood().asList():
+            count+=1.0/util.manhattanDistance(pos,pellet)
+            if util.manhattanDistance(pos,pellet) < 2:
+                count3+=1
+        features['closeToPellets'] = count
+        count2 = 0
+        count4 = 0
+        for capsule in power:
+            for ghostPos in ghostStates:
+                if util.manhattanDistance(pos,capsule)<3 and util.manhattanDistance(pos,capsule)<3:
+                    count2 += 1
+                count4+= 1.0/util.manhattanDistance(pos,capsule)
+        count5 = 0
+        count6 = 0
+        for ghost in ghostStates:
+            ghostPos = ghost.getPosition()
+            if (util.manhattanDistance(pos,ghostPos)<4 and ghost.scaredTimer == 0):
+                count5+=1
+            if (ghost.scaredTimer > 0):
+                count6+= util.manhattanDistance(pos,ghostPos)
+        features['ghostClose'] = count5
+        features['ghostScared'] = count6
+        features['capsuleGhostCombo'] = count2
+        features['closeToCapsule'] = count4
+        features['score'] = state.getScore()
+        features['veryCloseToPellets'] = count3
     return features
 
 

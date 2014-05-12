@@ -65,6 +65,7 @@ class MiraClassifier:
         for label in self.legalLabels:
             bestWeights[label] = util.Counter()
         for c in Cgrid:
+            minErrors = float('inf')
             testErrors = 0.0
             for label in self.legalLabels:
                 self.weights[label] = util.Counter()
